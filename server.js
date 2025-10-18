@@ -193,27 +193,17 @@ app.post('/api/extract-events', async (req, res) => {
       });
     }
     
-    // Post-process dates to ensure they're in the future
-    const now = new Date();
+    // Post-process dates to ensure they're in the current year (2025)
     const adjustedEvents = events.map(event => {
       const eventDate = new Date(event.startDateTime);
       
-      // If the event date is in the past, adjust it to the next occurrence
-      if (eventDate < now) {
-        const currentYear = now.getFullYear();
-        const nextYear = currentYear + 1;
-        
-        // Try current year first
-        let adjustedDate = new Date(event.startDateTime);
+      // Always set to current year (2025) unless it's already in the future
+      if (eventDate.getFullYear() !== currentYear) {
+        const adjustedDate = new Date(event.startDateTime);
         adjustedDate.setFullYear(currentYear);
         
-        // If still in the past, use next year
-        if (adjustedDate < now) {
-          adjustedDate.setFullYear(nextYear);
-        }
-        
         event.startDateTime = adjustedDate.toISOString().slice(0, 19);
-        console.log(`📅 Adjusted date from ${eventDate.toISOString()} to ${adjustedDate.toISOString()}`);
+        console.log(`📅 Set date to current year: ${adjustedDate.toISOString()}`);
       }
       
       return event;
