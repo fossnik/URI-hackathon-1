@@ -7,6 +7,8 @@ const extractBtnLoader = document.getElementById('extractBtnLoader');
 const eventsSection = document.getElementById('eventsSection');
 const eventsList = document.getElementById('eventsList');
 const generateIcsBtn = document.getElementById('generateIcsBtn');
+const selectAllBtn = document.getElementById('selectAllBtn');
+const deselectAllBtn = document.getElementById('deselectAllBtn');
 
 // State
 let extractedEvents = [];
@@ -158,6 +160,18 @@ function displayEvents(events) {
         eventsList.appendChild(card);
     });
 }
+
+// Select All Events
+selectAllBtn.addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.event-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+});
+
+// Deselect All Events
+deselectAllBtn.addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.event-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+});
 
 // Generate ICS File
 generateIcsBtn.addEventListener('click', () => {
