@@ -1,5 +1,8 @@
 // DOM Elements
 const inputText = document.getElementById('inputText');
+const urlInput = document.getElementById('urlInput');
+const toggleTextBtn = document.getElementById('toggleTextBtn');
+const textInputGroup = document.getElementById('textInputGroup');
 const sampleBtn = document.getElementById('sampleBtn');
 const extractBtn = document.getElementById('extractBtn');
 const extractBtnText = document.getElementById('extractBtnText');
@@ -31,46 +34,125 @@ URI Hackathon will take place December 1-2, 2025 starting at 5:00 PM at the Engi
 // Sample Data Button
 sampleBtn.addEventListener('click', () => {
     inputText.value = SAMPLE_TEXT;
-    inputText.focus();
+    textInputGroup.classList.add('show');
+    toggleTextBtn.textContent = '🌐 Or use URL instead';
+    // Focus after animation completes
+    setTimeout(() => {
+        inputText.focus();
+    }, 300);
+    updateExtractButton();
 });
 
-// Extract Events
-extractBtn.addEventListener('click', async () => {
+// Toggle Text Input
+toggleTextBtn.addEventListener('click', () => {
+    if (textInputGroup.classList.contains('show')) {
+        // Hide text input
+        textInputGroup.classList.remove('show');
+        toggleTextBtn.textContent = '📝 Or paste text directly';
+        inputText.value = '';
+        updateExtractButton();
+    } else {
+        // Show text input
+        textInputGroup.classList.add('show');
+        toggleTextBtn.textContent = '🌐 Or use URL instead';
+        // Focus after animation completes
+        setTimeout(() => {
+            inputText.focus();
+        }, 300);
+    }
+});
+
+// Input validation and button state management
+function updateExtractButton() {
+    const url = urlInput.value.trim();
     const text = inputText.value.trim();
     
-    if (!text) {
-        alert('Please enter some text to extract events from.');
+    if (url || text) {
+        extractBtn.disabled = false;
+        extractBtn.classList.remove('btn-disabled');
+        extractBtn.classList.add('btn-primary');
+    } else {
+        extractBtn.disabled = true;
+        extractBtn.classList.add('btn-disabled');
+        extractBtn.classList.remove('btn-primary');
+    }
+}
+
+// Add event listeners for input changes
+urlInput.addEventListener('input', updateExtractButton);
+inputText.addEventListener('input', updateExtractButton);
+
+// Extract Events (consolidated for both URL and text)
+extractBtn.addEventListener('click', async () => {
+    const text = inputText.value.trim();
+    const url = urlInput.value.trim();
+    
+    if (!text && !url) {
+        alert('Please either paste text directly or enter a URL to fetch content from.');
         return;
     }
     
     setLoading(true);
     
     try {
-        const response = await fetch('/api/extract-events', {
+        let contentToExtract = text;
+        
+        // If URL is provided but no text, fetch from URL first
+        if (url && !text) {
+            console.log(`🌐 Fetching content from URL: ${url}`);
+            
+            const fetchResponse = await fetch('/api/fetch-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url }),
+            });
+            
+            const fetchData = await fetchResponse.json();
+            
+            if (!fetchResponse.ok) {
+                alert(`Error fetching URL: ${fetchData.error}`);
+                return;
+            }
+            
+            if (!fetchData.success || !fetchData.content) {
+                alert('Failed to fetch content from the URL.');
+                return;
+            }
+            
+            contentToExtract = fetchData.content;
+            console.log(`✅ Fetched content from ${url} (${fetchData.content.length} chars)`);
+        }
+        
+        // Extract events from the content
+        console.log('🔄 Starting event extraction...');
+        const extractResponse = await fetch('/api/extract-events', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ text }),
+            body: JSON.stringify({ text: contentToExtract }),
         });
         
-        const data = await response.json();
+        const extractData = await extractResponse.json();
         
-        if (response.ok) {
-            if (data.events && data.events.length > 0) {
-                extractedEvents = data.events;
-                displayEvents(data.events);
+        if (extractResponse.ok) {
+            if (extractData.events && extractData.events.length > 0) {
+                extractedEvents = extractData.events;
+                displayEvents(extractData.events);
                 eventsSection.style.display = 'block';
                 eventsSection.scrollIntoView({ behavior: 'smooth' });
+                console.log(`✅ Successfully extracted ${extractData.events.length} events`);
             } else {
-                alert('No events found in the text. Try different text or check your input.');
+                alert('No events found in the content. Try different content or check your input.');
             }
         } else {
-            alert(`Error: ${data.error}`);
+            alert(`Error extracting events: ${extractData.error}`);
         }
     } catch (error) {
         console.error('Error:', error);
-        alert(`Error extracting events: ${error.message}`);
+        alert(`Error processing content: ${error.message}`);
     } finally {
         setLoading(false);
     }
