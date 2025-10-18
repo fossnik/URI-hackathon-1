@@ -85,6 +85,52 @@ textarea:focus {
     border-color: #667eea;
 }
 
+/* URL Input Styles */
+.input-group {
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+#textInputGroup {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+
+#textInputGroup.show {
+    max-height: 500px;
+    opacity: 1;
+}
+
+.input-label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+
+.url-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.url-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.url-input::placeholder {
+    color: #999;
+}
+
 .button-row {
     display: flex;
     gap: 10px;
@@ -144,9 +190,41 @@ textarea:focus {
     cursor: not-allowed;
 }
 
+.btn-outline {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.btn-outline:hover {
+    background: #e9ecef;
+    color: #495057;
+    border-color: #adb5bd;
+}
+
+.btn-disabled {
+    background: #ccc !important;
+    color: #666 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-disabled:hover {
+    background: #ccc !important;
+    color: #666 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 .loader {
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid white;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top: 3px solid #333;
     border-radius: 50%;
     width: 20px;
     height: 20px;

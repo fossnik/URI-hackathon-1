@@ -15,18 +15,42 @@
 
         <!-- Input Section -->
         <div class="section">
-            <h2>📝 Step 1: Paste Your Text</h2>
-            <p class="info-text">Paste any text containing event information (news articles, emails, schedules, etc.)</p>
-            <textarea 
-                id="inputText" 
-                placeholder="Paste your text here... Example: 'Join us for the Annual Tech Conference on October 25, 2025 at 2:00 PM at the Convention Center.'"
-                rows="8"
-            ></textarea>
+            <h2>📝 Step 1: Input Your Content</h2>
+            <p class="info-text">Enter a URL to fetch content from, or paste text containing event information</p>
+            
+            <!-- URL Input -->
+            <div class="input-group">
+                <label for="urlInput" class="input-label">🌐 Enter URL:</label>
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="https://example.com/events-page"
+                    class="url-input"
+                >
+            </div>
+
+            <!-- Text Input Toggle -->
+            <div class="input-group">
+                <button id="toggleTextBtn" class="btn btn-outline">
+                    📝 Or paste text directly
+                </button>
+            </div>
+
+            <!-- Collapsible Text Input -->
+            <div class="input-group" id="textInputGroup">
+                <label for="inputText" class="input-label">📝 Paste your text:</label>
+                <textarea 
+                    id="inputText" 
+                    placeholder="Paste your text here... Example: 'Join us for the Annual Tech Conference on October 25, 2025 at 2:00 PM at the Convention Center.'"
+                    rows="8"
+                ></textarea>
+            </div>
+
             <div class="button-row">
                 <button id="sampleBtn" class="btn btn-secondary">
                     Try Sample Data
                 </button>
-                <button id="extractBtn" class="btn btn-primary">
+                <button id="extractBtn" class="btn btn-primary btn-disabled" disabled>
                     <span id="extractBtnText">🔍 Extract Events</span>
                     <span id="extractBtnLoader" class="loader" style="display: none;"></span>
                 </button>

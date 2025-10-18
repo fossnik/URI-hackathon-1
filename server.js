@@ -25,6 +25,90 @@ app.use(express.static('public'));
 // Initialize Gemini AI
 const ai = new GoogleGenAI({});
 
+// API endpoint to fetch content from URL
+app.post('/api/fetch-url', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    console.log(`🌐 Fetching content from URL: ${url}`);
+
+    // Use Node.js native fetch to get the content
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      signal: controller.signal,
+      redirect: 'follow'
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const htmlContent = await response.text();
+    
+    // Extract text content from HTML
+    let textContent = htmlContent;
+    
+    // Simple HTML tag removal and text extraction
+    textContent = textContent
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove script tags
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove style tags
+      .replace(/<[^>]+>/g, ' ') // Remove all HTML tags
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .replace(/&nbsp;/g, ' ') // Replace HTML entities
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim();
+    
+    console.log(`✅ Fetched and processed content (${textContent.length} chars) from ${url}`);
+
+    res.json({ 
+      success: true, 
+      content: textContent,
+      url: url,
+      length: textContent.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching URL:', error.message);
+    console.error('❌ Error details:', error);
+    
+    let errorMessage = 'Failed to fetch URL';
+    if (error.name === 'AbortError') {
+      errorMessage = 'Request timeout: The URL took too long to respond. Please try again.';
+    } else if (error.message.includes('fetch failed') || error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+      errorMessage = 'Network error: Unable to connect to the URL. Please check if the URL is accessible and try again.';
+    } else if (error.message.includes('HTTP error')) {
+      errorMessage = `HTTP Error: ${error.message}`;
+    } else if (error.message.includes('Invalid URL')) {
+      errorMessage = 'Invalid URL format. Please check the URL and try again.';
+    } else {
+      errorMessage = `Error: ${error.message}`;
+    }
+    
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
 // API endpoint to extract events from text
 app.post('/api/extract-events', async (req, res) => {
   try {
@@ -36,10 +120,18 @@ app.post('/api/extract-events', async (req, res) => {
 
     console.log(`📩 Extracting events from text (${text.length} chars)...`);
 
+    // Limit content size to prevent timeout issues
+    const maxLength = 8000; // Limit to 8000 characters
+    const processedText = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    
+    if (text.length > maxLength) {
+      console.log(`⚠️ Text truncated from ${text.length} to ${processedText.length} chars to prevent timeout`);
+    }
+
     // Use Gemini with structured output
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Extract all future events from the following text. For each event, identify the title/summary, date and time, and location if available. Return ONLY a JSON array.\n\nText:\n${text}`,
+      contents: `Extract all future events from the following text. For each event, identify the title/summary, date and time, and location if available. Return ONLY a JSON array.\n\nText:\n${processedText}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
