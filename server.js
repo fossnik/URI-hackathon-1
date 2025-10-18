@@ -128,10 +128,13 @@ app.post('/api/extract-events', async (req, res) => {
       console.log(`⚠️ Text truncated from ${text.length} to ${processedText.length} chars to prevent timeout`);
     }
 
+    // Get current year for context
+    const currentYear = new Date().getFullYear();
+    
     // Use Gemini with structured output
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Extract all future events from the following text. For each event, identify the title/summary, date and time, and location if available. Return ONLY a JSON array.\n\nText:\n${processedText}`,
+      contents: `Extract all future events from the following text. The current year is ${currentYear}. If a date is mentioned without a year, assume it's in ${currentYear} or the next occurrence of that date. For each event, identify the title/summary, date and time, and location if available. Return ONLY a JSON array.\n\nText:\n${processedText}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -190,8 +193,34 @@ app.post('/api/extract-events', async (req, res) => {
       });
     }
     
+    // Post-process dates to ensure they're in the future
+    const now = new Date();
+    const adjustedEvents = events.map(event => {
+      const eventDate = new Date(event.startDateTime);
+      
+      // If the event date is in the past, adjust it to the next occurrence
+      if (eventDate < now) {
+        const currentYear = now.getFullYear();
+        const nextYear = currentYear + 1;
+        
+        // Try current year first
+        let adjustedDate = new Date(event.startDateTime);
+        adjustedDate.setFullYear(currentYear);
+        
+        // If still in the past, use next year
+        if (adjustedDate < now) {
+          adjustedDate.setFullYear(nextYear);
+        }
+        
+        event.startDateTime = adjustedDate.toISOString().slice(0, 19);
+        console.log(`📅 Adjusted date from ${eventDate.toISOString()} to ${adjustedDate.toISOString()}`);
+      }
+      
+      return event;
+    });
+    
     // Add IDs to events
-    const eventsWithIds = events.map((event, index) => ({
+    const eventsWithIds = adjustedEvents.map((event, index) => ({
       ...event,
       id: index + 1
     }));
