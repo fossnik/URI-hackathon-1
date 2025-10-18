@@ -14,30 +14,25 @@ body {
     min-height: 100vh;
     padding: 20px;
     position: relative;
-    overflow-x: hidden;
 }
 
-body::before {
-    content: '';
+/* Canvas Nest Background Effect */
+#canvas-nest {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
-        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path d="M20,180 Q40,160 60,180 T100,180 T140,180 T180,180" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/><path d="M10,150 Q30,130 50,150 T90,150 T130,150 T170,150" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" fill="none"/><circle cx="30" cy="30" r="3" fill="rgba(255,255,255,0.2)"/><circle cx="170" cy="50" r="2" fill="rgba(255,255,255,0.15)"/><circle cx="50" cy="170" r="2.5" fill="rgba(255,255,255,0.18)"/><circle cx="150" cy="170" r="2" fill="rgba(255,255,255,0.12)"/><circle cx="100" cy="40" r="1.5" fill="rgba(255,255,255,0.15)"/><circle cx="80" cy="120" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="120" cy="80" r="1.5" fill="rgba(255,255,255,0.13)"/></svg>');
-    background-size: 400px 400px;
-    animation: float 25s ease-in-out infinite;
-    pointer-events: none;
-    z-index: -1;
-    filter: blur(0.5px);
+    z-index: 0;
+    pointer-events: none; /* Allow clicks to pass through to content */
 }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    25% { transform: translateY(-15px) rotate(1deg); }
-    50% { transform: translateY(-25px) rotate(0deg); }
-    75% { transform: translateY(-10px) rotate(-1deg); }
+/* Ensure content sits above canvas */
+.container,
+header,
+footer {
+    position: relative;
+    z-index: 1;
 }
 
 .container {
