@@ -11,8 +11,41 @@ const eventsSection = document.getElementById('eventsSection');
 const eventsList = document.getElementById('eventsList');
 const generateIcsBtn = document.getElementById('generateIcsBtn');
 
+// Loading overlay elements
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingSubtitle = document.getElementById('loadingSubtitle');
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const step3 = document.getElementById('step3');
+const step4 = document.getElementById('step4');
+
 // State
 let extractedEvents = [];
+
+// Enhanced Loading Functions
+function showLoadingOverlay(title, subtitle) {
+    loadingTitle.textContent = title;
+    loadingSubtitle.textContent = subtitle;
+    loadingOverlay.classList.add('show');
+    
+    // Reset all steps
+    [step1, step2, step3, step4].forEach(step => step.classList.remove('active'));
+}
+
+function updateLoadingStep(stepNumber, title, subtitle) {
+    // Activate current step
+    [step1, step2, step3, step4][stepNumber - 1]?.classList.add('active');
+    
+    if (title) loadingTitle.textContent = title;
+    if (subtitle) loadingSubtitle.textContent = subtitle;
+}
+
+function hideLoadingOverlay() {
+    loadingOverlay.classList.remove('show');
+    // Reset all steps
+    [step1, step2, step3, step4].forEach(step => step.classList.remove('active'));
+}
 
 // Sample data for testing
 const SAMPLE_TEXT = `University Events Calendar
@@ -91,13 +124,14 @@ extractBtn.addEventListener('click', async () => {
     }
     
     setLoading(true);
+    showLoadingOverlay('Preparing Your Journey', 'Getting ready to explore...');
     
     try {
         let contentToExtract = text;
         
         // If URL is provided but no text, fetch from URL first
         if (url && !text) {
-            console.log(`🌐 Fetching content from URL: ${url}`);
+            updateLoadingStep(1, '🌐 Fetching Content', 'Retrieving information from the web...');
             
             const fetchResponse = await fetch('/api/fetch-url', {
                 method: 'POST',
@@ -110,11 +144,13 @@ extractBtn.addEventListener('click', async () => {
             const fetchData = await fetchResponse.json();
             
             if (!fetchResponse.ok) {
+                hideLoadingOverlay();
                 alert(`Error fetching URL: ${fetchData.error}`);
                 return;
             }
             
             if (!fetchData.success || !fetchData.content) {
+                hideLoadingOverlay();
                 alert('Failed to fetch content from the URL.');
                 return;
             }
@@ -124,7 +160,8 @@ extractBtn.addEventListener('click', async () => {
         }
         
         // Extract events from the content
-        console.log('🔄 Starting event extraction...');
+        updateLoadingStep(2, '🧠 AI Analysis', 'Our AI is analyzing the content...');
+        
         const extractResponse = await fetch('/api/extract-events', {
             method: 'POST',
             headers: {
@@ -133,23 +170,34 @@ extractBtn.addEventListener('click', async () => {
             body: JSON.stringify({ text: contentToExtract }),
         });
         
+        updateLoadingStep(3, '📅 Extracting Events', 'Finding and organizing events...');
+        
         const extractData = await extractResponse.json();
         
         if (extractResponse.ok) {
             if (extractData.events && extractData.events.length > 0) {
-                extractedEvents = extractData.events;
-                displayEvents(extractData.events);
-                eventsSection.style.display = 'block';
-                eventsSection.scrollIntoView({ behavior: 'smooth' });
-                console.log(`✅ Successfully extracted ${extractData.events.length} events`);
+                updateLoadingStep(4, '✅ Journey Complete!', `Found ${extractData.events.length} events for your calendar`);
+                
+                // Small delay to show completion
+                setTimeout(() => {
+                    extractedEvents = extractData.events;
+                    displayEvents(extractData.events);
+                    eventsSection.style.display = 'block';
+                    eventsSection.scrollIntoView({ behavior: 'smooth' });
+                    hideLoadingOverlay();
+                    console.log(`✅ Successfully extracted ${extractData.events.length} events`);
+                }, 1000);
             } else {
+                hideLoadingOverlay();
                 alert('No events found in the content. Try different content or check your input.');
             }
         } else {
+            hideLoadingOverlay();
             alert(`Error extracting events: ${extractData.error}`);
         }
     } catch (error) {
         console.error('Error:', error);
+        hideLoadingOverlay();
         alert(`Error processing content: ${error.message}`);
     } finally {
         setLoading(false);
